@@ -25,17 +25,17 @@ Thanks to safe access to intrinsics, there *is* no performance ceiling.
 
 # Safety
 
-If you look up the source code of any other SIMD abstraction, you will find that it is full of `unsafe` code. Something like `rg unsafe` will turn up several *thousands* of `unsafe` blocks. 
+If you look up the source code of any other SIMD abstraction, you will find that it is full of `unsafe` code. Something like `rg unsafe` will turn up several *thousand* `unsafe` blocks. 
 
 But not in Fearless SIMD! The crate is carefully engineered not to require ad-hoc `unsafe` code.
 
 One piece of the puzzle is the [kernel! macro](https://docs.rs/fearless_simd/latest/fearless_simd/macro.kernel.html), which leans on [target feature v1.1](https://rust-lang.github.io/rfcs/2396-target-feature-1.1.html) in the compiler to invoke most SIMD intrinsics without `unsafe`. I have described the design in detail [in an earlier blog post](https://shnatsel.github.io/safe-simd-in-rust-even-on-the-inside/), so check this out if you'd like to learn more.
 
-That removes most of ad-hoc `unsafe`, but doesn't cover SIMD load/store operations which operate on raw pointers. That's where our [safe transmute module](https://github.com/linebender/fearless_simd/blob/850adcae4996e6584fa77443a652c666f2aab126/fearless_simd/src/transmute.rs), inspired by crates such as `bytemuck` and `zerocopy`, comes into play.
+That removes most of the ad-hoc `unsafe`, but doesn't cover SIMD load/store operations which operate on raw pointers. That's where our [safe transmute module](https://github.com/linebender/fearless_simd/blob/850adcae4996e6584fa77443a652c666f2aab126/fearless_simd/src/transmute.rs), inspired by crates such as `bytemuck` and `zerocopy`, comes into play.
 
 SIMD intrinsics like `_mm_loadu_epi32` may seem special, but actually turn into plain loads and stores behind the scenes. So you can fully replicate their functionality with a [single, reusable wrapper](https://github.com/linebender/fearless_simd/blob/850adcae4996e6584fa77443a652c666f2aab126/fearless_simd/src/transmute.rs#L252-L354).
 
-Thanks to the power of Rust's type system, we only need to audit these two small, self-contained building blocks. As long as they are memory-safe, the entire rest of the codebase is guaranteed to be memory-safe as well.
+Thanks to the power of Rust's type system, we only need to audit these two small, self-contained building blocks. As long as they are memory-safe, the rest of the codebase is guaranteed to be memory-safe as well.
 
 At last, SIMD in Rust can be truly fearless.
 
@@ -45,7 +45,7 @@ Function multiversioning is tricky.
 
 Previous solutions either [require adding `#[inline(always)]` annotations](https://shnatsel.github.io/safe-simd-in-rust-even-on-the-inside/) and understanding their implications, or [impose a small overhead on every function call](https://docs.rs/multiversion/0.9.0/multiversion/). The latter is fine most of the time, but degrades performance on very small functions, and still requires you to surgically add `#[inline(always)]` to get around that.
 
-Both are leaky abstractions - you still need to think of what is happening under the hood!
+Both are leaky abstractions - you still need to think about what is happening under the hood!
 
 Alongside `fearless_simd` v1.0, we are launching `fearless_simd_macros` v0.1, which provides a non-leaky abstraction: the `#[simd]` macro. With it, you don't have to think about what's happening under the hood at all! Put it on any SIMD function and it Just Works.
 
@@ -54,7 +54,7 @@ That said, while this is a big step forward for the ecosystem, there is still [s
 
 And if you don't like procedural macros, the old way of doing things is still available, if less convenient.
 
-Ergonomics are the one area we expect may still evolve. But this does not compromise the stability guarantees of the core `fearless_simd` crate, and the code written today with or without the `#[simd]` macro will continue working indefinitely.
+Ergonomics is the one area we expect may still evolve. But this does not compromise the stability guarantees of the core `fearless_simd` crate, and the code written today with or without the `#[simd]` macro will continue working indefinitely.
 
 # Stability
 
@@ -66,17 +66,17 @@ While we cannot see the future, there are viable paths to supporting both near-t
 
 We would love to see `std::simd` stabilized, but it would not make Fearless SIMD obsolete.
 
-The Rust standard library implements only the parts that absolutely have to be in it, and the rest (multiversioning, hardware-width vectors, etc) is left up to the ecosystem crates.
+The Rust standard library implements only the parts that absolutely have to be in it, and the rest (e.g. multiversioning, hardware-width vectors) is left up to the ecosystem crates.
 
 `fearless_simd` includes an equivalent of `std::simd` that works on stable Rust, but that is just one part of a bigger whole.
 
-Once `std::simd` is stabilized, we will port Fearless SIMD to it to delete a lot of custom code and gain support all sorts of obscure platforms. But the need for ecosystem crates such as `fearless_simd` will remain.
+Once `std::simd` is stabilized, we will port Fearless SIMD to it to delete a lot of custom code and gain support for all sorts of obscure platforms. But the need for ecosystem crates such as `fearless_simd` will remain.
 
 # Adoption
 
 It doesn't matter how brilliant your crate is if nobody is using it.
 
-Fearless SIMD is already used by [30 other crates](https://crates.io/crates/fearless_simd/reverse_dependencies) as a direct dependency, and is undirectly relied on by [over a thousand crates](https://lib.rs/crates/fearless_simd/rev)!
+Fearless SIMD is already used by [30 other crates](https://crates.io/crates/fearless_simd/reverse_dependencies) as a direct dependency, and is indirectly relied on by [over a thousand crates](https://lib.rs/crates/fearless_simd/rev)!
 
 It already underpins a nontrivial fraction of the Rust ecosystem, and we hope that v1.0 will take this even further.
 
